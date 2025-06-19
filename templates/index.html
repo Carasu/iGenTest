@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能测试用例生成工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .input-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+        }
+        .section-title {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #0d6efd;
+        }
+        textarea {
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">智能测试用例生成工具</h1>
+        
+        <div class="alert alert-info">
+            <strong>提示：</strong> 输入函数代码或需求描述，系统将自动生成结构化的测试用例
+        </div>
+        
+        <div class="input-section">
+            <h2 class="section-title">函数代码分析</h2>
+            <form action="/generate/function" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">粘贴Python函数代码:</label>
+                    <textarea class="form-control" name="code" placeholder="粘贴Python函数代码..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">生成测试用例</button>
+            </form>
+        </div>
+        
+        <div class="input-section">
+            <h2 class="section-title">需求分析</h2>
+            <form action="/generate/requirement" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">输入需求描述:</label>
+                    <textarea class="form-control" name="requirement" placeholder="输入功能需求描述..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">生成测试用例</button>
+            </form>
+        </div>
+        
+        <div class="mt-4 text-muted text-center">
+            <small>使用SiliconFlow API实现 | 测试用例结构化生成工具</small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

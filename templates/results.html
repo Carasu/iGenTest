@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试用例生成结果</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .case-card {
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #0d6efd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .case-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .step-list {
+            padding-left: 1.5rem;
+        }
+        .expected-result {
+            padding: 0.75rem;
+            background-color: #e8f4ff;
+            border-radius: 5px;
+        }
+        .input-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+        }
+        .btn-download {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">{{ type }} - 生成结果</h1>
+        
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/" class="btn btn-secondary">返回首页</a>
+            <div>
+                <button class="btn btn-success btn-download" onclick="downloadJson()">
+                    <i class="bi bi-download"></i> 下载JSON
+                </button>
+                <button class="btn btn-primary" onclick="window.location.reload()">
+                    <i class="bi bi-arrow-repeat"></i> 重新生成
+                </button>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <h4>输入内容:</h4>
+            <div class="p-3 bg-white rounded border">
+                <pre>{{ content }}</pre>
+            </div>
+        </div>
+        
+        {% if cases.error %}
+        <div class="alert alert-danger">
+            <h5>生成错误:</h5>
+            <p>{{ cases.error }}</p>
+            <pre>{{ cases.raw }}</pre>
+        </div>
+        
+        {% elif cases %}
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>生成的测试用例 ({{ cases |length }} 个)</h3>
+                    <span class="badge bg-primary">自动生成</span>
+                </div>
+                
+                {% for case in cases %}
+                <div class="card case-card">
+                  <div class="card-body">
+                    <h5 class="card-title">{{ case.name | default('未命名的测试用例') }}</h5>
+                    
+                    <div class="mb-3">
+                      <strong>操作步骤:</strong>
+                      <ol class="step-list" style="color: #333;"> 
+                        {% if case.steps %}
+                          {% for step in case.steps %}
+                          <li>{{ step | default('步骤未指定') }}</li>
+                          {% endfor %}
+                        {% else %}
+                          <li>未提供操作步骤</li>
+                        {% endif %}
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <strong>预期结果:</strong>
+                      <p class="expected-result" style="color: #333;">{{ case.expected | default('预期结果未指定') }}</p>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% elif cases[0] and cases[0].name and cases[0].steps and cases[0].expected %}
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>生成的测试用例 ({{ cases|length }} 个)</h3>
+                    <span class="badge bg-primary">自动生成</span>
+                </div>
+                
+                {% for case in cases %}
+                <div class="card case-card">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="alert alert-warning">
+            未生成有效的测试用例，请检查输入格式或重试。
+            <pre>{{ cases|tojson }}</pre> <!-- 用于调试 -->
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function downloadJson() {
+            const data = {{ cases|tojson }};
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "test_cases.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
