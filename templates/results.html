@@ -6,24 +6,6 @@
     <title>测试用例生成结果</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .case-card {
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #0d6efd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .case-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .step-list {
-            padding-left: 1.5rem;
-        }
-        .expected-result {
-            padding: 0.75rem;
-            background-color: #e8f4ff;
-            border-radius: 5px;
-        }
         .input-section {
             margin-bottom: 2rem;
             padding: 1.5rem;
@@ -32,6 +14,38 @@
         }
         .btn-download {
             margin-right: 10px;
+        }
+        .table-container {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .success-result {
+            color: #198754;
+            font-weight: bold;
+        }
+        .fail-result {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .equivalence-classes {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .badge-valid {
+            background-color: #198754;
+        }
+        .badge-invalid {
+            background-color: #dc3545;
+        }
+        .badge-boundary {
+            background-color: #0dcaf0;
         }
     </style>
 </head>
@@ -58,86 +72,215 @@
             </div>
         </div>
         
-        {% if cases.error %}
-        <div class="alert alert-danger">
-            <h5>生成错误:</h5>
-            <p>{{ cases.error }}</p>
-            <pre>{{ cases.raw }}</pre>
-        </div>
-        
-        {% elif cases %}
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>生成的测试用例 ({{ cases |length }} 个)</h3>
-                    <span class="badge bg-primary">自动生成</span>
-                </div>
-                
-                {% for case in cases %}
-                <div class="card case-card">
-                  <div class="card-body">
-                    <h5 class="card-title">{{ case.name | default('未命名的测试用例') }}</h5>
-                    
-                    <div class="mb-3">
-                      <strong>操作步骤:</strong>
-                      <ol class="step-list" style="color: #333;"> 
-                        {% if case.steps %}
-                          {% for step in case.steps %}
-                          <li>{{ step | default('步骤未指定') }}</li>
-                          {% endfor %}
-                        {% else %}
-                          <li>未提供操作步骤</li>
-                        {% endif %}
-                      </ol>
+        <!-- 增强数据结构处理 -->
+        {% if cases is defined and cases is not none and cases is mapping %}
+            {% set equivalence_classes = cases.get('equivalence_classes', []) %}
+            {% set test_cases = cases.get('test_cases', []) %}
+            {% set test_classes = cases.get('test_classes', []) %}
+            
+            <!-- 如果找不到测试用例数据，尝试其他可能的名字 -->
+            {% if not test_cases %}
+                {% set test_cases = cases.get('testCases', []) %}
+            {% endif %}
+            {% if not test_cases %}
+                {% set test_cases = cases.get('cases', []) %}
+            {% endif %}
+            
+            <!-- 处理等价类数据 -->
+            {% if equivalence_classes and equivalence_classes is iterable and equivalence_classes is not string %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>等价类划分 ({{ equivalence_classes | length }} 个)</h3>
                     </div>
                     
-                    <div>
-                      <strong>预期结果:</strong>
-                      <p class="expected-result" style="color: #333;">{{ case.expected | default('预期结果未指定') }}</p>
+                    <div class="table-container">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>输入条件</th>
+                                    <th>类型</th>
+                                    <th>描述</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for eq in equivalence_classes %}
+                                <tr>
+                                    <td>{{ eq.id }}</td>
+                                    <td>{{ eq.input_condition }}</td>
+                                    <td>
+                                        {% if eq.type == "valid" %}
+                                            <span class="badge badge-valid">有效</span>
+                                        {% elif eq.type == "invalid" %}
+                                            <span class="badge badge-invalid">无效</span>
+                                        {% elif eq.type == "boundary" %}
+                                            <span class="badge badge-boundary">边界值</span>
+                                        {% else %}
+                                            {{ eq.type }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ eq.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                  </div>
                 </div>
-                {% endfor %}
             </div>
-        </div>
-        
-        {% elif cases[0] and cases[0].name and cases[0].steps and cases[0].expected %}
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>生成的测试用例 ({{ cases|length }} 个)</h3>
-                    <span class="badge bg-primary">自动生成</span>
+            {% endif %}
+            
+            <!-- 处理测试用例数据 -->
+            {% if test_cases and test_cases is iterable and test_cases is not string %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>生成的测试用例 ({{ test_cases | length }} 个)</h3>
+                        <span class="badge bg-primary">自动生成</span>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>测试用例ID</th>
+                                    <th>描述</th>
+                                    <th>输入数据</th>
+                                    <th>预期结果</th>
+                                    <th>覆盖的等价类</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in test_cases %}
+                                {% if case is string %}
+                                  <tr class="bg-warning">
+                                    <td colspan="5">错误的测试用例格式: {{ case }}</td>
+                                  </tr>
+                                {% else %}
+                                  <tr>
+                                    <td>{{ case.test_case_id }}</td>
+                                    <td>{{ case.description }}</td>
+                                    {# 修复输入数据渲染 - 确保空字符串显示空白 #}
+                                    <td class="text-monospace">
+                                      {% if case.input_data %}
+                                        {% if case.input_data is mapping %}
+                                          {# 检查title值是否为空 #}
+                                          {% if 'title' in case.input_data and case.input_data.title == "" %}
+                                            {# 空字符串时不显示内容 #}
+                                          {% else %}
+                                            {% for key, value in case.input_data.items() %}
+                                              {% if value == "" %}
+                                                {# 空值时不显示 #}
+                                              {% else %}
+                                                {{ value }}<br>
+                                              {% endif %}
+                                            {% endfor %}
+                                          {% endif %}
+                                        {% else %}
+                                          {# 非对象类型的输入数据处理 #}
+                                          {{ case.input_data }}
+                                        {% endif %}
+                                      {% else %}
+                                        {# 没有输入数据 #}
+                                      {% endif %}
+                                    </td>
+                                    
+                                    <td>
+                                      {% if case.expected_result == "成功" %}
+                                        <span class="success-result">{{ case.expected_result }}</span>
+                                      {% else %}
+                                        <span class="fail-result">{{ case.expected_result }}</span>
+                                      {% endif %}
+                                    </td>
+                                    <td>
+                                      <span class="equivalence-classes">
+                                        {% if case.covers_equivalence_classes %}
+                                            {{ case.covers_equivalence_classes | join(", ") }}
+                                        {% else %}
+                                            无
+                                        {% endif %}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                
-                {% for case in cases %}
-                <div class="card case-card">
-                </div>
-                {% endfor %}
             </div>
-        </div>
+            {% endif %}
+            
+            <!-- 如果找不到测试用例数据 -->
+            {% if not test_cases and not equivalence_classes %}
+            <div class="alert alert-danger">
+                <h5>数据结构错误</h5>
+                <p>未找到有效的测试用例或等价类数据。字典包含以下键：</p>
+                <ul>
+                    {% for key in cases.keys() %}
+                    <li>{{ key }}</li>
+                    {% endfor %}
+                </ul>
+                <pre>{{ cases | tojson }}</pre>
+            </div>
+            {% endif %}
         
+        <!-- 其他情况 -->
         {% else %}
         <div class="alert alert-warning">
             未生成有效的测试用例，请检查输入格式或重试。
-            <pre>{{ cases|tojson }}</pre> <!-- 用于调试 -->
+            <!-- 使用更安全的方式输出调试信息 -->
+            <pre>
+            {% if cases is defined and cases is not none %}
+                {{ cases | tojson if cases is not mapping else cases.keys() | list }}
+            {% else %}
+                Cases 未定义
+            {% endif %}
+            </pre>
         </div>
         {% endif %}
     </div>
 
     <script>
         function downloadJson() {
-            const data = {{ cases|tojson }};
-            const jsonString = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonString], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "test_cases.json";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            try {
+                // 创建安全的下载数据
+                let jsonData = {};
+                
+                {% if cases is defined and cases is not none %}
+                    // 如果cases是字典，直接使用它
+                    {% if cases is mapping %}
+                        jsonData = JSON.parse('{{ cases | tojson }}');
+                    {% else %}
+                        // 否则创建默认结构
+                        jsonData = {
+                            equivalence_classes: [],
+                            test_cases: []
+                        };
+                    {% endif %}
+                {% else %}
+                    // 默认空结构
+                    jsonData = {
+                        equivalence_classes: [],
+                        test_cases: []
+                    };
+                {% endif %}
+                
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                const blob = new Blob([jsonString], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "test_cases.json";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("下载JSON失败:", error);
+                alert("下载JSON失败: " + error.message);
+            }
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
